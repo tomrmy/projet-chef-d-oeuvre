@@ -1,4 +1,6 @@
 <?php
+session_start();
+if (!isset($_SESSION['admin_logged_in'])) { header("Location: login.php"); exit; }
 // On récupère le nom de la page actuelle pour surligner le bon bouton dans le menu
 $currentPage = basename($_SERVER['PHP_SELF']);
 ?>

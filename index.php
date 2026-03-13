@@ -1,6 +1,6 @@
 <?php 
 require 'db.php'; 
-require 'header.php'; 
+require 'header.php'; // Gère le design, la sidebar et la session
 
 // KPIs
 $totalUsers = $pdo->query("SELECT COUNT(*) FROM utilisateurs")->fetchColumn();
@@ -46,7 +46,7 @@ while($row = $chartQuery->fetch()) {
             <div class="card p-4 h-100"><div class="d-flex justify-content-between align-items-center"><div><h6 class="text-muted fw-semibold mb-2 text-uppercase" style="font-size:0.8rem;">Passages (Aujourd'hui)</h6><h2 class="fw-bold mb-0"><?= $scansToday ?></h2></div><div class="bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 20px;"><i class="fa-solid fa-door-open"></i></div></div></div>
         </div>
         <div class="col-xl-4 col-md-4 mb-3">
-            <div class="card p-4 h-100 border-start border-danger border-4"><div class="d-flex justify-content-between align-items-center"><div><h6 class="text-muted fw-semibold mb-2 text-uppercase" style="font-size:0.8rem;">Alertes Sécurité</h6><h2 class="fw-bold mb-0 text-danger"><?= $totalAlerts ?></h2></div><div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 20px;"><i class="fa-solid fa-triangle-exclamation"></i></div></div></div>
+            <div class="card p-4 h-100 border-start border-danger border-4 shadow-sm"><div class="d-flex justify-content-between align-items-center"><div><h6 class="text-muted fw-semibold mb-2 text-uppercase" style="font-size:0.8rem;">Alertes Sécurité</h6><h2 class="fw-bold mb-0 text-danger" id="alerte-counter"><?= $totalAlerts ?></h2></div><div class="bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 20px;"><i class="fa-solid fa-triangle-exclamation"></i></div></div></div>
         </div>
     </div>
 </div>
@@ -65,7 +65,7 @@ while($row = $chartQuery->fetch()) {
                 <div class="p-4 border-bottom" style="border-color: var(--border-color) !important;"><h5 class="fw-bold mb-0">Derniers Accès Autorisés</h5></div>
                 <div class="table-responsive">
                     <table class="table table-custom mb-0">
-                        <thead><tr><th>Heure</th><th>Identité</th><th>Service</th><th>UID</th></tr></thead>
+                        <thead><tr><th class="ps-4">Heure</th><th>Identité</th><th>Service</th><th>UID</th></tr></thead>
                         <tbody>
                             <?php
                             $query = $pdo->query("SELECT p.date_passage, u.nom, u.prenom, u.classe, p.numero_badge FROM passages_badge p JOIN utilisateurs u ON p.numero_badge = u.numero_badge ORDER BY p.date_passage DESC LIMIT 8");
@@ -74,7 +74,7 @@ while($row = $chartQuery->fetch()) {
                                 $heure = date('H:i:s', strtotime($row['date_passage']));
                                 $initiales = strtoupper(substr($row['prenom'], 0, 1) . substr($row['nom'], 0, 1));
                                 echo "<tr>
-                                        <td><span class='text-muted small'>Aujourd'hui</span><br><span class='fw-bold'>{$heure}</span></td>
+                                        <td class='ps-4'><span class='text-muted small'>Aujourd'hui</span><br><span class='fw-bold'>{$heure}</span></td>
                                         <td><div class='d-flex align-items-center gap-3'><div class='bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm' style='width: 38px; height: 38px; font-size: 13px; font-weight: 600;'>{$initiales}</div><div><div class='fw-bold'>{$row['prenom']} {$row['nom']}</div></div></div></td>
                                         <td><span class='badge bg-secondary bg-opacity-10 text-secondary border px-2 py-1 rounded-pill'>{$row['classe']}</span></td>
                                         <td><span class='badge-uid'>{$row['numero_badge']}</span></td>
@@ -90,14 +90,14 @@ while($row = $chartQuery->fetch()) {
         <div class="col-xl-4 mb-4">
             <div class="card p-0 overflow-hidden h-100 border-danger border-opacity-25">
                 <div class="p-4 border-bottom bg-danger bg-opacity-10" style="border-color: var(--border-color) !important;"><h5 class="fw-bold text-danger mb-0"><i class="fa-solid fa-shield-virus me-2"></i>Tentatives Refusées</h5></div>
-                <div class="p-3">
+                <div class="p-3" style="max-height: 400px; overflow-y: auto;">
                     <?php
-                    $inconnus = $pdo->query("SELECT * FROM badges_inconnus ORDER BY date_scan DESC LIMIT 5");
+                    $inconnus = $pdo->query("SELECT * FROM badges_inconnus ORDER BY date_scan DESC LIMIT 10");
                     if ($inconnus->rowCount() == 0) echo "<div class='text-center py-5 text-muted'><i class='fa-solid fa-check-circle fs-1 mb-3 opacity-25 text-success'></i><br>Aucune alerte en cours</div>";
                     while ($bad = $inconnus->fetch()) {
                         $temps = date('H:i:s', strtotime($bad['date_scan']));
-                        echo "<div class='p-3 mb-2 rounded border shadow-sm' style='border-color: var(--border-color) !important; background-color: var(--bg-color); border-left: 4px solid #dc3545 !important;'>
-                                <div class='d-flex justify-content-between mb-2'><span class='fw-bold text-danger'>{$bad['numero_badge']}</span><span class='text-muted small'>{$temps}</span></div>
+                        echo "<div class='p-3 mb-2 rounded border shadow-sm alert-item' style='border-color: var(--border-color) !important; background-color: var(--bg-color); border-left: 4px solid #dc3545 !important;'>
+                                <div class='d-flex justify-content-between mb-2'><span class='fw-bold text-danger'><i class='fa-solid fa-id-card me-1'></i> {$bad['numero_badge']}</span><span class='text-muted small'>{$temps}</span></div>
                                 <div class='d-flex gap-2'>
                                     <a href='ajouter.php?badge={$bad['numero_badge']}' class='btn btn-sm btn-outline-success flex-fill rounded-3' style='font-size: 0.75rem;' title='Ajouter'><i class='fa-solid fa-plus'></i></a>
                                     <a href='action.php?action=bloquer&badge={$bad['numero_badge']}' class='btn btn-sm btn-outline-warning flex-fill rounded-3' style='font-size: 0.75rem;' title='Bloquer'><i class='fa-solid fa-ban'></i></a>
@@ -113,9 +113,11 @@ while($row = $chartQuery->fetch()) {
 </div>
 
 </main></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="theme.js"></script>
+
 <script>
-    // INITIALISATION DU GRAPHIQUE
+    // --- 1. CONFIGURATION DU GRAPHIQUE ---
     const ctx = document.getElementById('activityChart').getContext('2d');
     const activityChart = new Chart(ctx, {
         type: 'line',
@@ -131,7 +133,7 @@ while($row = $chartQuery->fetch()) {
                 pointBorderColor: '#4f46e5',
                 pointRadius: 5,
                 fill: true,
-                tension: 0.3 // Courbe fluide
+                tension: 0.3
             }]
         },
         options: {
@@ -145,22 +147,61 @@ while($row = $chartQuery->fetch()) {
         }
     });
 
-    // ACTUALISATION TEMPS RÉEL (Graphique + Tableaux)
+    // --- 2. GESTION DES NOTIFICATIONS ET SONS ---
+    let derniereAlerteTotal = <?= $totalAlerts ?>; 
+    
+    // Demander la permission à Windows/Mac au chargement de la page
+    if ("Notification" in window && Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
+
+    // Fonction qui génère un Bip Bip sonore 100% JS (pas besoin de fichier mp3)
+    const playAlertSound = () => {
+        let audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let oscillator = audioCtx.createOscillator();
+        let gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(440, audioCtx.currentTime); // Note La
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime); // Volume bas
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.3); // Durée du Bip (0.3s)
+    };
+
+    // --- 3. ACTUALISATION MAGIQUE (Toutes les 2 secondes) ---
     setInterval(() => {
         fetch(window.location.href).then(r => r.text()).then(html => {
             let doc = new DOMParser().parseFromString(html, 'text/html');
             
-            // 1. Mise à jour des tableaux
+            // Mise à jour de l'interface visuelle
             document.getElementById('dashboard-tables').innerHTML = doc.getElementById('dashboard-tables').innerHTML;
-            
-            // 2. Mise à jour des KPIs (et du data-source du graphique)
             document.getElementById('dashboard-kpis').innerHTML = doc.getElementById('dashboard-kpis').innerHTML;
             
-            // 3. Mise à jour magique du graphique sans le faire clignoter
+            // VÉRIFICATION DES ALERTES POUR LES NOTIFICATIONS
+            let nouveauxAlertesTotal = parseInt(doc.getElementById('alerte-counter').innerText);
+            
+            if (nouveauxAlertesTotal > derniereAlerteTotal) {
+                // Alerte sonore !
+                playAlertSound();
+                
+                // Notification Windows/Mac !
+                if ("Notification" in window && Notification.permission === "granted") {
+                    new Notification("🚨 Pro-Access : Alerte Sécurité", {
+                        body: "Un badge inconnu ou bloqué vient d'être refusé à l'entrée.",
+                    });
+                }
+            }
+            // On met à jour le compteur en mémoire
+            derniereAlerteTotal = nouveauxAlertesTotal;
+
+            // Mise à jour du Graphique en douceur
             let newDataSource = document.getElementById('chart-data-source');
-            activityChart.data.labels = JSON.parse(newDataSource.dataset.labels);
-            activityChart.data.datasets[0].data = JSON.parse(newDataSource.dataset.values);
-            activityChart.update();
+            if (newDataSource && activityChart) {
+                activityChart.data.labels = JSON.parse(newDataSource.dataset.labels);
+                activityChart.data.datasets[0].data = JSON.parse(newDataSource.dataset.values);
+                activityChart.update();
+            }
         });
     }, 2000);
 </script>
